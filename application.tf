@@ -105,7 +105,7 @@ resource "aws_security_group" "database" {
 # RDS instance setup
 resource "aws_db_instance" "My_RDS_Instance" {
   allocated_storage = 5
-  #storage_type         = "gp2"
+  storage_type         = "gp2"
   name              = "${var.rdsDBName}"
   username          = "${var.rdsUsername}"
   password          = "${var.rdsPassword}"
@@ -142,8 +142,6 @@ resource "aws_instance" "webapp" {
   iam_instance_profile = "${aws_iam_instance_profile.ec2_profile.name}"
   user_data = <<-EOF
                #!/bin/bash
-               sudo echo export "DevAccessKey=${var.DevAccessKey}" >> /etc/environment
-               sudo echo export "DevSecretKey=${var.DevSecretKey}" >> /etc/environment
                sudo echo export "Bucketname=${aws_s3_bucket.bucket.bucket}" >> /etc/environment
                sudo echo export "DBhost=${aws_db_instance.My_RDS_Instance.address}" >> /etc/environment
                sudo echo export "DBendpoint=${aws_db_instance.My_RDS_Instance.endpoint}" >> /etc/environment
@@ -151,6 +149,10 @@ resource "aws_instance" "webapp" {
                sudo echo export "DBusername=${aws_db_instance.My_RDS_Instance.username}" >> /etc/environment
                sudo echo export "DBpassword=${aws_db_instance.My_RDS_Instance.password}" >> /etc/environment
                EOF
+  root_block_device {
+    volume_size           = "${var.ec2_root_volume_size}"
+    volume_type           = "${var.ec2_root_volume_type}"
+      }
   tags = {
     Name        = "Application Server"
     Environment = "Developments"
