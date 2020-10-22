@@ -1,7 +1,7 @@
 # vpc.tf 
 # Select providers
 provider "aws" {
- profile= "dev"
+ profile= var.profile
  region= var.region 
 }
 
@@ -59,4 +59,7 @@ resource "aws_route_table_association" "User_VPC_association" {
   subnet_id      = "${element(aws_subnet.User_VPC_Subnet.*.id, count.index)}"
   route_table_id =  aws_route_table.User_VPC_route_table.id
 } # end resource
+
+
+
 # end vpc.tf
