@@ -109,3 +109,12 @@ variable "iamrole" {
 variable "dev_owner"{
 type=string
 }
+
+
+variable "domainName"{
+    type=string
+}
+
+variable "routeprofile"{
+    type=string
+}
