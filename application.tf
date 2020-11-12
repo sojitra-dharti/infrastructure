@@ -102,6 +102,17 @@ resource "aws_security_group" "database" {
   }
 }
 
+resource "aws_iam_role_policy_attachment" "CloudWatchAgentPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+  role       = "${aws_iam_role.role.name}"
+}
+
+
+resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = "${aws_iam_role.role.name}"
+}
+
 # RDS instance setup
 resource "aws_db_instance" "My_RDS_Instance" {
   allocated_storage = 5
@@ -252,6 +263,10 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   name = "ec2_profile_role"
   role = "${aws_iam_role.role.name}"
 }
+
+#IAM role attached to EC2 instance for use with CloudWatch Agent
+
+
 
 # This Policy is for EC2 Role 
 resource "aws_iam_role_policy" "CodeDeploy-EC2-S3" {
