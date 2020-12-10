@@ -36,7 +36,8 @@ resource "aws_security_group" "application" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    security_groups = ["${aws_security_group.loadbalancer_security_group.id}"]
+    cidr_blocks = var.ingressCIDRblock
+    //security_groups = ["${aws_security_group.loadbalancer_security_group.id}"]
 
   }
   ingress {
@@ -113,6 +114,19 @@ resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
   role       = "${aws_iam_role.role.name}"
 }
 
+resource "aws_db_parameter_group" "rds" {
+  name   = "rds-pg"
+  family = "mysql5.7"
+  
+
+  parameter {
+    name  = "performance_schema"
+    value = 1
+    apply_method = "pending-reboot"
+  }
+
+}
+
 # RDS instance setup
 resource "aws_db_instance" "My_RDS_Instance" {
   allocated_storage = 5
@@ -123,9 +137,13 @@ resource "aws_db_instance" "My_RDS_Instance" {
   identifier        = "${var.rdsInstanceIdentifier}"
   engine            = "mysql"
   engine_version    = "${var.engine_version}"
-  instance_class    = "db.t3.micro"
+  instance_class    = "db.t2.small"
   storage_encrypted = true
   port              = "3306"
+  parameter_group_name = "${aws_db_parameter_group.rds.name}"
+  depends_on = [aws_db_parameter_group.rds]
+  
+  
 
   final_snapshot_identifier = "${var.rdsInstanceIdentifier}-SNAPSHOT"
   skip_final_snapshot       = true
@@ -611,12 +629,12 @@ resource "aws_security_group" "loadbalancer_security_group" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-    ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  #   ingress {
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
   egress {
     from_port   = 0
     to_port     = 0
@@ -642,16 +660,16 @@ resource "aws_lb" "WebappLoadbalancer" {
   }
 }
 
-resource "aws_lb_listener" "webapp_listener" {
-  load_balancer_arn = "${aws_lb.WebappLoadbalancer.arn}"
-  port              = "80"
-  protocol          = "HTTP"
+# resource "aws_lb_listener" "webapp_listener" {
+#   load_balancer_arn = "${aws_lb.WebappLoadbalancer.arn}"
+#   port              = "80"
+#   protocol          = "HTTP"
 
-  default_action {
-    type             = "forward"
-    target_group_arn = "${aws_lb_target_group.LoadBalancer-target-group.arn}"
-  }
-}
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = "${aws_lb_target_group.LoadBalancer-target-group.arn}"
+#   }
+# }
 
 resource "aws_iam_policy" "LamdaPolicyforGhaction" {
   name   = "ghAction_s3_policy_lambda"
@@ -863,3 +881,24 @@ resource "aws_iam_user_policy_attachment" "LambdaExecution-attachment" {
   user = "ghactions"
   policy_arn = "arn:aws:iam::aws:policy/AWSLambdaFullAccess"
 }
+
+
+//ssl terraform
+resource "aws_lb_listener" "webapp_listener" {
+  load_balancer_arn = "${aws_lb.WebappLoadbalancer.arn}"
+  port              = "443"
+  protocol          = "HTTPS"
+  certificate_arn   = "${data.aws_acm_certificate.ssl_certificate.arn}"
+
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.LoadBalancer-target-group.arn}"
+  }
+}
+
+data "aws_acm_certificate" "ssl_certificate" {
+  domain   = "${var.routeprofile}.${var.domainName}"
+  statuses = ["ISSUED"]
+}
+
