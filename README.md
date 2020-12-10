@@ -4,6 +4,7 @@
 * Terraform configuration files is designed to create multiple VPCs including all of it resources such as subnets, internet gateway, route table, etc.
 * Terraform apply will launch latest instance, create RDS instance, create and attach all policies related to S3 bucket and S3 user.
 * Terraform template should add/update the DNS record.
+* Secured Application Endpoints
 
 
 **Environment variables/Github Secrets**
@@ -47,6 +48,7 @@
 3.  Use apply command in newly created workspace.
 4. `terraform workspace show` to check current workspace.
 4. `terraform workspace select [NAME]` to switch between workspaces.
+
 
 **Download Terraform**
 
